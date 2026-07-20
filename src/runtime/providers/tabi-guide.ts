@@ -20,6 +20,11 @@ export const tabiGuide = defineOidcProvider<object, TabiGuideRequiredFields>({
   pkce: true,
   state: true,
   nonce: false,
+  // OpenIddict rejects multipart/form-data on /connect/token with
+  // "invalid_request: The specified 'Content-Type' header is invalid."
+  // RFC 6749 §4.1.3 mandates application/x-www-form-urlencoded, so match
+  // the other OpenID Connect–compliant presets (keycloak, microsoft, entra…).
+  tokenRequestType: 'form-urlencoded',
   validateAccessToken: false,
   validateIdToken: false,
   skipAccessTokenParsing: false,
