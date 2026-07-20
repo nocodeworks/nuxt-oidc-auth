@@ -15,7 +15,10 @@ node_modules
 **/.yarn/*state*
 
 # Generated dirs
-dist
+# NOTE(nocodeworks/main): dist/ is committed on this branch to enable
+# GitHub URL distribution (github:nocodeworks/nuxt-oidc-auth#vX.Y.Z-nocodeworks.N)
+# without requiring consumers to have pnpm or devDependencies installed.
+# This is intentional — do NOT re-add dist to .gitignore on nocodeworks/main.
 
 # Nuxt
 .nuxt
