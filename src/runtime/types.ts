@@ -17,6 +17,7 @@ export type ProviderKeys =
   | 'paypal'
   | 'microsoft'
   | 'logto'
+  | 'tabi-guide'
 export type ProviderKeysWithDev = ProviderKeys | 'dev'
 
 export interface ProviderConfigs {
@@ -31,6 +32,7 @@ export interface ProviderConfigs {
   paypal: typeof _PROVIDERS.paypal
   zitadel: typeof _PROVIDERS.zitadel
   logto: typeof _PROVIDERS.logto
+  'tabi-guide': typeof _PROVIDERS.tabiGuide
 }
 
 export interface OAuthConfig<UserSession> {

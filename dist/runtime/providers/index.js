@@ -9,3 +9,5 @@ export { microsoft } from "./microsoft.js";
 export { oidc } from "./oidc.js";
 export { paypal } from "./paypal.js";
 export { zitadel } from "./zitadel.js";
+export { tabiGuide } from "./tabi-guide.js";
+export { tabiGuide as "tabi-guide" } from "./tabi-guide.js";

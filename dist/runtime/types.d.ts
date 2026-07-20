@@ -2,7 +2,7 @@ import type { H3Event } from 'h3';
 import type { SearchParameters } from 'ofetch';
 import type * as _PROVIDERS from './providers/index.js';
 import type { EncryptedToken, JwtPayload } from './server/utils/security.js';
-export type ProviderKeys = 'apple' | 'auth0' | 'entra' | 'github' | 'keycloak' | 'oidc' | 'cognito' | 'zitadel' | 'paypal' | 'microsoft' | 'logto';
+export type ProviderKeys = 'apple' | 'auth0' | 'entra' | 'github' | 'keycloak' | 'oidc' | 'cognito' | 'zitadel' | 'paypal' | 'microsoft' | 'logto' | 'tabi-guide';
 export type ProviderKeysWithDev = ProviderKeys | 'dev';
 export interface ProviderConfigs {
     auth0: typeof _PROVIDERS.auth0;
@@ -16,6 +16,7 @@ export interface ProviderConfigs {
     paypal: typeof _PROVIDERS.paypal;
     zitadel: typeof _PROVIDERS.zitadel;
     logto: typeof _PROVIDERS.logto;
+    'tabi-guide': typeof _PROVIDERS.tabiGuide;
 }
 export interface OAuthConfig<UserSession> {
     onSuccess: (event: H3Event, result: {
