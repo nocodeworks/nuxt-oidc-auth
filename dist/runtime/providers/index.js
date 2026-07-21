@@ -11,3 +11,5 @@ export { paypal } from "./paypal.js";
 export { zitadel } from "./zitadel.js";
 export { tabiGuide } from "./tabi-guide.js";
 export { tabiGuide as "tabi-guide" } from "./tabi-guide.js";
+export { memberView } from "./member-view.js";
+export { memberView as "member-view" } from "./member-view.js";
