@@ -286,6 +286,14 @@ function callbackEventHandler({ onSuccess }: OAuthConfig<UserSession>) {
       await useStorage('oidc').setItem<PersistentSession>(userSessionId, persistentSession)
     }
 
+    // Capture session-scoped fields BEFORE session.clear() runs.
+    // h3's clearSession() deletes context.sessions[name] synchronously, after which
+    // session.data returns an empty object (see h3.mjs clearSession + useSession.data getter).
+    // Reading session.data.callbackRedirectUrl post-clear therefore always yields undefined,
+    // which forced every callback flow to redirect to config.callbackRedirectUrl (default "/"),
+    // making the client-supplied `?callbackRedirectUrl=/xxx` login param a no-op.
+    // Nocodeworks patch (2026-07-22): capture the value first, then clear.
+    const sessionCallbackRedirectUrl = session.data.callbackRedirectUrl
     await session.clear()
     deleteCookie(event, 'oidc')
     return onSuccess(event, {
@@ -293,7 +301,7 @@ function callbackEventHandler({ onSuccess }: OAuthConfig<UserSession>) {
       callbackRedirectUrl: resolveCallbackRedirectUrl({
         configuredCallbackRedirectUrl: config.callbackRedirectUrl,
         hasConfiguredCallbackRedirectUrl,
-        sessionCallbackRedirectUrl: session.data.callbackRedirectUrl,
+        sessionCallbackRedirectUrl,
       }),
     })
   })

@@ -198,6 +198,7 @@ function callbackEventHandler({ onSuccess }) {
       const userSessionId = await getUserSessionId(event);
       await useStorage("oidc").setItem(userSessionId, persistentSession);
     }
+    const sessionCallbackRedirectUrl = session.data.callbackRedirectUrl;
     await session.clear();
     deleteCookie(event, "oidc");
     return onSuccess(event, {
@@ -205,7 +206,7 @@ function callbackEventHandler({ onSuccess }) {
       callbackRedirectUrl: resolveCallbackRedirectUrl({
         configuredCallbackRedirectUrl: config.callbackRedirectUrl,
         hasConfiguredCallbackRedirectUrl,
-        sessionCallbackRedirectUrl: session.data.callbackRedirectUrl
+        sessionCallbackRedirectUrl
       })
     });
   });
