@@ -3,6 +3,7 @@ import type { H3Event } from 'h3'
 import type { SearchParameters } from 'ofetch'
 import type * as _PROVIDERS from './providers'
 
+import type { JWK } from 'jose'
 import type { EncryptedToken, JwtPayload } from './server/utils/security'
 
 export type ProviderKeys =
@@ -137,6 +138,16 @@ export interface PersistentSession {
   singleSignOutId?: string
   createdAt: Date
   updatedAt: Date
+  /**
+   * DPoP (RFC 9449) — session-scoped keypair bound to the access token.
+   * Present only when the provider enables `dpopEnabled`. The private key
+   * is JWK-serialized then AES-GCM encrypted with NUXT_OIDC_TOKEN_KEY (same
+   * key used for access_token at-rest). See `server/utils/dpop.ts`.
+   */
+  dpopEncryptedPrivateKey?: EncryptedToken
+  dpopPublicKeyJWK?: JWK
+  /** RFC 7638 SHA-256 thumbprint of `dpopPublicKeyJWK`; matches `cnf.jkt` in the access token. */
+  dpopJkt?: string
 }
 
 export interface TokenRequest {

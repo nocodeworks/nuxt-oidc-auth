@@ -16,6 +16,7 @@ import { createProviderFetch } from "../utils/provider.js";
 import { resolveCallbackRedirectUrl } from "../utils/redirect.js";
 import { encryptToken, parseJwtToken, validateToken } from "../utils/security.js";
 import { getUserSessionId, setUserSession, useAuthSession } from "../utils/session.js";
+import { buildHtu, generateDPoPKeypair, generateDPoPProof } from "../utils/dpop.js";
 function callbackEventHandler({ onSuccess }) {
   const logger = useOidcLogger();
   return eventHandler(async (event) => {
@@ -82,6 +83,21 @@ function callbackEventHandler({ onSuccess }) {
       },
       ...config.additionalTokenParameters && convertObjectToSnakeCase(config.additionalTokenParameters)
     };
+    let dpopKeypair;
+    if (config.dpopEnabled) {
+      const dpopTokenKey = process.env.NUXT_OIDC_TOKEN_KEY;
+      if (!dpopTokenKey) {
+        return oidcErrorHandler(event, `[${provider}] NUXT_OIDC_TOKEN_KEY is required when dpopEnabled=true`);
+      }
+      dpopKeypair = await generateDPoPKeypair(dpopTokenKey);
+      const dpopProof = await generateDPoPProof(
+        dpopKeypair.encryptedPrivateKey,
+        dpopKeypair.publicKeyJWK,
+        dpopTokenKey,
+        { htm: "POST", htu: buildHtu(config.tokenUrl) }
+      );
+      headers.DPoP = dpopProof;
+    }
     let tokenResponse;
     try {
       tokenResponse = await customFetch(config.tokenUrl, {
@@ -177,7 +193,7 @@ function callbackEventHandler({ onSuccess }) {
         }
       });
     }
-    if (tokenResponse.refresh_token || config.exposeAccessToken || config.exposeIdToken) {
+    if (tokenResponse.refresh_token || config.exposeAccessToken || config.exposeIdToken || dpopKeypair) {
       const tokenKey = process.env.NUXT_OIDC_TOKEN_KEY;
       const persistentSession = {
         createdAt: /* @__PURE__ */ new Date(),
@@ -190,6 +206,11 @@ function callbackEventHandler({ onSuccess }) {
         },
         ...tokenResponse.id_token && {
           idToken: await encryptToken(tokenResponse.id_token, tokenKey)
+        },
+        ...dpopKeypair && {
+          dpopEncryptedPrivateKey: dpopKeypair.encryptedPrivateKey,
+          dpopPublicKeyJWK: dpopKeypair.publicKeyJWK,
+          dpopJkt: dpopKeypair.jkt
         }
       };
       if (config.sessionConfiguration?.singleSignOut && config.sessionConfiguration?.singleSignOutIdField && (tokens.accessToken[config.sessionConfiguration.singleSignOutIdField] || tokens.idToken?.[config.sessionConfiguration.singleSignOutIdField])) {

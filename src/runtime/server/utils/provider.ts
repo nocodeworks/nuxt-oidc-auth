@@ -184,6 +184,23 @@ export interface OidcProviderConfig {
    */
   exposeIdToken?: boolean
   /**
+   * Enable DPoP (RFC 9449) — bind access tokens to a session-scoped ES256 keypair
+   * generated on the Nitro server. When enabled:
+   *   1. A keypair is generated during the token exchange in the callback handler.
+   *   2. The initial DPoP proof is sent on POST /token so the AS can embed the
+   *      RFC 7638 thumbprint (`jkt`) into the access token as a `cnf.jkt` claim.
+   *   3. Subsequent resource-server requests must attach a fresh proof via the
+   *      `DPoP` header (with `ath` = SHA-256 hash of the access token) and use the
+   *      `DPoP` (not `Bearer`) authorization scheme.
+   *
+   * The private key never leaves the Nitro process; it is AES-GCM encrypted with
+   * `NUXT_OIDC_TOKEN_KEY` and stored in the persistent session. This is the true
+   * BFF form of DPoP: browsers hold no crypto material.
+   *
+   * @default false
+   */
+  dpopEnabled?: boolean
+  /**
    * Set a custom redirect url to redirect to after a successful callback
    * @default '/'
    */
