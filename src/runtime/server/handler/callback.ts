@@ -28,7 +28,7 @@ import { createProviderFetch } from '../utils/provider'
 import { resolveCallbackRedirectUrl } from '../utils/redirect'
 import { encryptToken, parseJwtToken, validateToken } from '../utils/security'
 import { getUserSessionId, setUserSession, useAuthSession } from '../utils/session'
-import { buildHtu, generateDPoPKeypair, generateDPoPProof, type DPoPKeypair } from '../utils/dpop'
+import { buildHtu, computeAth, generateDPoPKeypair, generateDPoPProof, type DPoPKeypair } from '../utils/dpop'
 
 function callbackEventHandler({ onSuccess }: OAuthConfig<UserSession>) {
   const logger = useOidcLogger()
@@ -245,12 +245,37 @@ function callbackEventHandler({ onSuccess }: OAuthConfig<UserSession>) {
     }
 
     // Request userinfo
+    //
+    // RFC 9449 §6.1 (DPoP): when the access token is bound to a keypair via `cnf.jkt`,
+    // *every* resource-server request must carry a fresh DPoP proof — including the
+    // OIDC UserInfo endpoint. Sending Bearer scheme with a DPoP-bound token, or DPoP
+    // scheme without a proof, causes compliant authorization servers (OpenIddict,
+    // Auth0, Keycloak with DPoP enforcement) to reject the request as `invalid_token`.
+    //
+    // Before this patch (nocodeworks.6), the userinfo fetch omitted the DPoP proof
+    // and the resulting failure was swallowed by the surrounding `try/catch`, leaving
+    // `user.userInfo` undefined. Downstream BFF consumers that rely on `user.userInfo`
+    // (member-view / tabi-guide-view) therefore silently degraded — see subissue 034.
     try {
       if (config.userInfoUrl) {
+        const userInfoHeaders: Record<string, string> = {
+          Authorization: `${tokenResponse.token_type} ${tokenResponse.access_token}`,
+        }
+        if (dpopKeypair) {
+          const dpopTokenKey = process.env.NUXT_OIDC_TOKEN_KEY as string
+          userInfoHeaders.DPoP = await generateDPoPProof(
+            dpopKeypair.encryptedPrivateKey,
+            dpopKeypair.publicKeyJWK,
+            dpopTokenKey,
+            {
+              htm: 'GET',
+              htu: buildHtu(config.userInfoUrl),
+              ath: await computeAth(tokenResponse.access_token),
+            },
+          )
+        }
         const userInfoResult = await customFetch(config.userInfoUrl, {
-          headers: {
-            Authorization: `${tokenResponse.token_type} ${tokenResponse.access_token}`,
-          },
+          headers: userInfoHeaders,
         })
         user.userInfo = config.filterUserInfo
           ? Object.fromEntries(

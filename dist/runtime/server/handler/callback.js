@@ -16,7 +16,7 @@ import { createProviderFetch } from "../utils/provider.js";
 import { resolveCallbackRedirectUrl } from "../utils/redirect.js";
 import { encryptToken, parseJwtToken, validateToken } from "../utils/security.js";
 import { getUserSessionId, setUserSession, useAuthSession } from "../utils/session.js";
-import { buildHtu, generateDPoPKeypair, generateDPoPProof } from "../utils/dpop.js";
+import { buildHtu, computeAth, generateDPoPKeypair, generateDPoPProof } from "../utils/dpop.js";
 function callbackEventHandler({ onSuccess }) {
   const logger = useOidcLogger();
   return eventHandler(async (event) => {
@@ -166,10 +166,24 @@ function callbackEventHandler({ onSuccess }) {
     };
     try {
       if (config.userInfoUrl) {
+        const userInfoHeaders = {
+          Authorization: `${tokenResponse.token_type} ${tokenResponse.access_token}`
+        };
+        if (dpopKeypair) {
+          const dpopTokenKey = process.env.NUXT_OIDC_TOKEN_KEY;
+          userInfoHeaders.DPoP = await generateDPoPProof(
+            dpopKeypair.encryptedPrivateKey,
+            dpopKeypair.publicKeyJWK,
+            dpopTokenKey,
+            {
+              htm: "GET",
+              htu: buildHtu(config.userInfoUrl),
+              ath: await computeAth(tokenResponse.access_token)
+            }
+          );
+        }
         const userInfoResult = await customFetch(config.userInfoUrl, {
-          headers: {
-            Authorization: `${tokenResponse.token_type} ${tokenResponse.access_token}`
-          }
+          headers: userInfoHeaders
         });
         user.userInfo = config.filterUserInfo ? Object.fromEntries(
           Object.entries(userInfoResult).filter(
