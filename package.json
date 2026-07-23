@@ -20,14 +20,14 @@
     "./runtime/*": "./dist/runtime/*"
   },
   "scripts": {
-    "prepack": "nuxt-module-build build && pnpm client:build",
+    "build": "nuxt-module-build build && pnpm client:build",
     "client:build": "nuxi generate client",
     "client:dev": "nuxi dev client --port 3300",
     "dev:client": "concurrently \"nuxi dev client --port 3300\" \"nuxi dev playground\"",
     "dev": "nuxi dev playground",
     "dev:docs": "nuxi dev docs",
     "dev:prepare": "nuxt-module-build build --stub && nuxt-module-build prepare && nuxi prepare playground && nuxi prepare client",
-    "release": "pnpm lint && pnpm prepack && changelogen --release && git push --follow-tags && pnpm publish --access=public",
+    "release": "pnpm lint && pnpm build && changelogen --release && git push --follow-tags && pnpm publish --access=public",
     "lint": "pnpm lint:ox && pnpm lint:eslint",
     "lint:ox": "oxlint -c oxlint.json --type-aware --tsconfig tsconfig.json --report-unused-disable-directives .",
     "lint:eslint": "eslint --cache --cache-strategy content --cache-location node_modules/.cache/eslint/.eslintcache --no-error-on-unmatched-pattern \"**/*.vue\"",
